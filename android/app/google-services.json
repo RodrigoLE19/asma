@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "512696535272",
+    "project_id": "ataqueasmaapp",
+    "storage_bucket": "ataqueasmaapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512696535272:android:fc852f7b6f43233c22615d",
+        "android_client_info": {
+          "package_name": "com.example.asma"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0_vhix2aaU3M5vS5U2zVr6MRarvSYrWE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
