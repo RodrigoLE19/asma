@@ -1,11 +1,11 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../domain/either.dart';
 import '../../../domain/enums.dart';
 import '../../../domain/repositories/authentication_repository.dart';
-import '../../../presentation/models/user.dart';
+
 import '../../domain/enums_account.dart';
+import '../../domain/models/user.dart';
 import '../services/remote/authentication_firebase.dart';
 
 const _key = 'sesionId';
@@ -42,7 +42,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository{
   @override
   Future<bool> get isSigneIn async {
     final sesionId = await _secureStorage.read(key: _key);
-    return sesionId != null;
+    return sesionId!= null;
   }
 
   /*@override
@@ -72,6 +72,7 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository{
       String email,
       String password
       ) async {
+    print("Dentro de la funcion el repositorio impl");
     final user = await _authenticationFirebase.signInEmailAndPassword(email, password);
     if (user == null) {
       return Either.left(SignInFailure.userNotFound);

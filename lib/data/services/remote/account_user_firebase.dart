@@ -28,14 +28,14 @@ class AccountUserFirebase{
 
         // Separar apellidos
         List<String> lastNamePart = lastname.split(' ');
-        String firsLastName = lastNamePart.isNotEmpty ? lastNamePart.first : '';
+        String firsLastName = lastNamePart.isNotEmpty ? lastNamePart.first : ''; // AGREGUE LA 't' a "firsLastName"
         // Crear usuario en Firestore
         await _firestore.collection('user').doc(uid).set({
           'uid': uid,
           'email': email,
           'names':names,
           'lastname':lastname,
-          'displayName': firstName+' '+firsLastName ,
+          'displayName': firstName+' '+firsLastName , // AGREGUE LA 't' a "firsLastName"
           'gender': gender,
           'birthday': birthday,
         });

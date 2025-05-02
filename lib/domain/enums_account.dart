@@ -1,3 +1,3 @@
 enum AccountUserFailure{passwordWeak,emailAlreadyRegistered,UnknownFirebaseAuthException}
 
-/*enum SignInFailure{userNotFound,wrongPassword}*/
+//enum SignInFailure{userNotFound,wrongPassword}

@@ -7,7 +7,7 @@ class SignInController extends ChangeNotifier{
   bool _obscureText = true;
 
   String get email=>_email;
-  String get password=>password;
+  String get password=>_password;
   bool get fetching=>_fetching;
   bool get obscureText=>_obscureText;
 

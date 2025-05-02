@@ -24,7 +24,6 @@ class AuthService {
   }
 
   Future singInEmailAndPassword(String email, String password) async {
-
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
       final a = userCredential.user;

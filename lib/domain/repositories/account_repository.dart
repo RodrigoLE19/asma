@@ -1,6 +1,6 @@
-import '../../presentation/models/user.dart';
 import '../either.dart';
 import '../enums_account.dart';
+import '../models/user.dart';
 
 abstract class AccountRepository {
   Future<String> createAccountUserFirebase(String email, String password);

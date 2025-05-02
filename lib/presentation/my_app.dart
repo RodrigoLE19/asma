@@ -1,4 +1,3 @@
-
 import 'package:asma/presentation/routes/app_routes.dart';
 import 'package:asma/presentation/routes/routes.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,7 +14,7 @@ class MyApp extends StatelessWidget {
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        initialRoute: Routes.splash,
+        initialRoute: Routes.screen_start,
         routes: appRoutes,
       ),
     );

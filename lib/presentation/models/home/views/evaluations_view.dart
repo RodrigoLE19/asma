@@ -1,7 +1,13 @@
-
+import 'dart:convert';
+import 'package:asma/domain/models/evaluation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../data/http/http.dart';
+import '../../../../domain/repositories/evaluations_repository.dart';
+import '../../../global/controller/session_controller.dart';
+import '../../../routes/routes.dart';
 import '../../evaluations_results/screen_high_risk_view.dart';
 
 class EvaluationsView extends StatefulWidget {
@@ -12,61 +18,184 @@ class EvaluationsView extends StatefulWidget {
 }
 
 class _EvaluationsViewState extends State<EvaluationsView> {
-  int _selectedIndex = 0;
+  final TextEditingController _peso= TextEditingController();
+  final TextEditingController _altura = TextEditingController();
+  final TextEditingController _resultadoIMC = TextEditingController();
 
-  void _onItemTapped(int index) {
+  Map<int, String> respuestas = {};
+  bool highRiskGlobal = false;
+  bool respondeGlobal = false;
+
+  Future<Map<String, dynamic>>? evaluationsFuture;
+  int? _Wheezing;
+  int? _ShortnessOfBreath;
+  int? _ChestTightness;
+  int? _Coughing;
+  double imcResult = 0;
+
+  String? _errorMessage;
+  String? _errorMessageMentHlth;
+  String _nombrePaciente = '';
+  String _generoPaciente = 'MASCULINO';
+  bool _isEvaluar = false; // Indica si se va a evaluar a otra persona
+
+  void _onWheezingChanged(int? value) {
     setState(() {
-      _selectedIndex = index;
+      _Wheezing = value;
     });
+  }
+
+  void _onShortnessOfBreathChanged(int? value) {
+    setState(() {
+      _ShortnessOfBreath = value;
+    });
+  }
+
+  void _onChestTightnessChanged(int? value) {
+    setState(() {
+      _ChestTightness = value;
+    });
+  }
+
+  void _onCoughingChanged(int? value) {
+    setState(() {
+      _Coughing = value;
+    });
+  }
+
+  bool _validateFields() {
+    return _nombrePaciente!=null || _nombrePaciente!=null &&
+      _Wheezing != null &&
+      _ShortnessOfBreath != null &&
+      _ChestTightness != null &&
+      _Coughing != null &&
+      imcResult !=0;
+
+  }
+
+  int convertirGenero(String genero) {
+    if (genero.toLowerCase() == 'masculino') {
+      return 1;
+    } else if (genero.toLowerCase() == 'femenino') {
+      return 0;
+    } else {
+      return 2;
+    }
+  }
+
+  bool validarRespuestas() {
+    return respuestas.length == 4 && !respuestas.values.contains('');
+  }
+
+  void resultadoIMC(double peso, double altura) {
+    double altura_cm = altura / 100;
+    double imc = peso / (altura_cm * altura_cm);
+    // Convertirlo a 2 decimales por si acaso
+    String resultado = imc.toStringAsFixed(2);
+
+    setState(() {
+      _resultadoIMC.text = resultado;
+    });
+  }
+
+  Future<void> _EvaluateQustionary(BuildContext context, String nombrePaciente, String generoPaciente, fechaNacimientoPaciente, bool isEvaluar,
+      String uidUser) async{
+    if (validarRespuestas() && _resultadoIMC.text.isNotEmpty) {
+      print('Todas las preguntas fueron respondidas: $respuestas');
+      double resultado_IMC = double.parse(_resultadoIMC.text);
+      int resultado_pregunta2 = respuestas[2] == "Sí" ? 1 : 0;
+      int resultado_pregunta3 = respuestas[3] == "Sí" ? 1 : 0;
+      int resultado_pregunta4 = respuestas[4] == "Sí" ? 1 : 0;
+      int resultado_pregunta5 = respuestas[5] == "Sí" ? 1 : 0;
+      Evaluation evaluation = Evaluation(
+          questionIMC: resultado_IMC,
+          questionWheezing: resultado_pregunta2,
+          questionShortnessOfBreath: resultado_pregunta3,
+          questionChestTightness: resultado_pregunta4,
+          questionCoughing: resultado_pregunta5);
+      // Convertir la instancia a un mapa
+      Map<String, dynamic> evaluationMap = evaluation.toMap();
+
+      // Convertir los valores del mapa a strings para el cuerpo del POST
+      Map<String, String> body =
+      evaluationMap.map((key, value) => MapEntry(key, value.toString()));
+      //print(nombrePaciente);
+      print("CUERPO BODY");
+      print(body.toString());
+      try {
+        final response = await Http.Evaluation(body);
+        print("RESPONSE");
+        print(response.statusCode);
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final String resultModel = data['AsthmaDiagnosis'];
+        final String formateoResultadoModelo =
+        resultModel.toString().replaceAll(RegExp(r'[\[\]\{\}]'), '');
+        final String resultadoModeloTraducido;
+        // Mostrar el resultado en un Snackbar
+        if (response.statusCode == 200) {
+          if (formateoResultadoModelo == '0') {
+            Navigator.pushReplacementNamed(context, Routes.screen_low_risk);
+            resultadoModeloTraducido = 'BAJO RIESGO';
+            print(resultadoModeloTraducido);
+          } else {
+            Navigator.pushReplacementNamed(context, Routes.screen_high_risk);
+            resultadoModeloTraducido = 'ALTO RIESGO';
+            print(resultadoModeloTraducido);
+          }
+          _registerEvaluationUser(
+              context, evaluation, resultadoModeloTraducido, uidUser);
+
+        } else {
+          print("Error: ${response.statusCode}");
+        }
+      } catch (e) {
+        print("CATCH DE LA EVALUATION");
+        print("Error: $e");
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor, responde todas las preguntas')),
+      );
+    }
+
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _buildPageContent(), // Muestra el contenido dinámico según la pestaña
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Color(0xFF2D9CB1),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_hospital),
-            label: 'Evaluación',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Mis Evaluaciones',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assessment),
-            label: 'Estadisticas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF003E49),
-        unselectedItemColor: Colors.white,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Mantiene todas las pestañas visibles
-      ),
+    final SessionController sessionController = context.read();
+    final user = sessionController.state!;
+    //final userData = snapshot.data!.data() as Map<String, dynamic>;
+    final String uidUser = user.uid;
+    return FutureBuilder(
+      future: FirebaseFirestore.instance.collection('user').doc(user.uid).get(),
+      builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        if (!snapshot.hasData) {
+          return Container(
+              color: Color(0xFF2B6178),
+              child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    backgroundColor: Colors.grey,
+                  )
+              )
+          );
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Center(child: Text('No user data available'));
+        } else {
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          final datosUsuario = userData['displayName'];
+          return Scaffold(
+            body: _buildEvaluationPage(uidUser,datosUsuario), // Muestra el contenido dinámico según la pestaña
+          );
+        }
+
+      }
     );
   }
-  Widget _buildPageContent() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildEvaluationPage();
-      case 1:
-        return _buildHistoryPage();
-      case 2:
-        return _buildStatisticsPage();
-      case 3:
-        return _buildProfilePage();
-      default:
-        return _buildEvaluationPage();
-    }
-  }
-  Widget _buildEvaluationPage() {
+
+  Widget _buildEvaluationPage(String uidUser, String nombreUsuario) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -100,7 +229,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                           style: TextStyle(color: Colors.white, fontSize: 36),
                         ),
                         TextSpan(
-                          text: "Rodrigo",
+                          text: nombreUsuario,
                           style: TextStyle(color: Color(0xFF073D47), fontSize: 36),
                         ),
                       ],
@@ -108,7 +237,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "Completa el formulario para determinar el nivel de tu crisis asmática",
+                    "Completa el formulario para determinar el nivel de riesgo de crisis asmática",
                     style: TextStyle(color: Colors.white, fontSize: 16),
                     //textAlign: TextAlign.center,
                   ),
@@ -134,23 +263,13 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                   buildIMCQuestion(),
                   SizedBox(height: 20),
                   // Pregunta 2
-                  buildQuestionCard("2. ¿Tienes dificultad para respirar?"),
+                  buildQuestionCard("2. ¿Le silba el pecho?",2),
                   // Pregunta 3
-                  buildQuestionCard("3. ¿Tienes tos?"),
+                  buildQuestionCard("3. ¿Tiene dificultad para respirar?",3),
                   // Pregunta 4
-                  buildQuestionCard("4. ¿Le silba el pecho?"),
+                  buildQuestionCard("4. ¿Sientes opresion o dolor en el pecho?",4),
                   // Pregunta 5
-                  buildQuestionCard("5. ¿Sientes opresión en el pecho?"),
-                  // Pregunta 6
-                  buildQuestionCard("6. ¿Tiene dificultad para hablar?"),
-                  // Pregunta 7
-                  buildQuestionCard("7. ¿Puedes hablar oraciones largas?"),
-                  // Pregunta 8
-                  buildQuestionCard("8. Tu respiración es mas rapida que lo normal?"),
-                  // Pregunta 9
-                  buildQuestionCard("9. ¿Notas que usas los músculos del cuello o de las costillas para respirar?"),
-                  // Pregunta 10
-                  buildQuestionCard("10. ¿Escuchas un sonido silbante cuando respiras?"),
+                  buildQuestionCard("5. ¿Tienes tos?",5),
                   SizedBox(height: 20),
                   Align(
                     alignment: Alignment.center,
@@ -164,14 +283,10 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                       ),
                       onPressed: () {
                         // Navega a la vista de cuestionario
-                        Navigator.push(
-                          context,
-                          //MaterialPageRoute(builder: (context) => ScreenMildGravityView()),
-                          MaterialPageRoute(builder: (context) => ScreenHighRiskView()),
-                        );
+                        _EvaluateQustionary(context, "Rodrigo", "Masculino", "19/09/2001", _isEvaluar, uidUser);
                       },
                       child: Text(
-                        "Enviar",
+                        "Evaluar",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -199,7 +314,8 @@ class _EvaluationsViewState extends State<EvaluationsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF2D9CB1),
               ),
@@ -217,6 +333,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: _peso,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Peso (kg)',
@@ -228,6 +345,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                 SizedBox(width: 10),
                 Expanded(
                   child: TextField(
+                    controller: _altura,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Altura (cm)',
@@ -242,7 +360,9 @@ class _EvaluationsViewState extends State<EvaluationsView> {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Lógica de cálculo del IMC
+                  resultadoIMC(double.parse(_peso.text), double.parse(_altura.text));
+                  //print(double.parse(_peso.text));
+                  //print(double.parse(_altura.text));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF003E49),
@@ -255,7 +375,9 @@ class _EvaluationsViewState extends State<EvaluationsView> {
             ),
             SizedBox(height: 10,),
             TextField(
+              controller: _resultadoIMC,
               keyboardType: TextInputType.text,
+              readOnly: true,
               decoration: InputDecoration(
                 labelText: 'Resultado',
                 border: OutlineInputBorder(),
@@ -267,7 +389,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
     );
   }
 
-  Widget buildQuestionCard(String questionText) {
+  Widget buildQuestionCard(String questionText, int index) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 3,
@@ -280,7 +402,8 @@ class _EvaluationsViewState extends State<EvaluationsView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ElevatedButton(onPressed: () {},
+              ElevatedButton(
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF2D9CB1),
                   padding: EdgeInsets.symmetric(horizontal: 30),
@@ -294,17 +417,22 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                   ),
                 ),
               ),
-              // Título de la pregunta
-
               SizedBox(height: 15),
-              // Botones "Sí" y "No"
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  buildResponseButton("Sí"),
-                  buildResponseButton("No"),
+                  buildResponseButton("Sí", index),
+                  buildResponseButton("No", index),
                 ],
               ),
+              if (respuestas[index] != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    "Respuesta: ${respuestas[index]}",
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                )
             ],
           ),
         ),
@@ -312,10 +440,13 @@ class _EvaluationsViewState extends State<EvaluationsView> {
     );
   }
 
-  Widget buildResponseButton(String text) {
+  Widget buildResponseButton(String text, int index) {
     return ElevatedButton(
       onPressed: () {
-        // Acción al presionar
+        setState(() {
+          respuestas[index] = text;
+        });
+        print("Pregunta $index -> $text");
       },
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.symmetric(horizontal: 50, vertical: 10),
@@ -323,8 +454,8 @@ class _EvaluationsViewState extends State<EvaluationsView> {
           borderRadius: BorderRadius.circular(30),
           side: BorderSide(color: Color(0xFF2D9CB1)),
         ),
-        backgroundColor: Colors.transparent, // Fondo transparente
-        elevation: 0, // Sin sombra
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       child: Text(
         text,
@@ -333,228 +464,6 @@ class _EvaluationsViewState extends State<EvaluationsView> {
     );
   }
 }
-// Página de Historial
-Widget _buildHistoryPage() {
-  return Container(
-    width: double.infinity,
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF2D9CB1),
-          Color(0xFF003E49),
-        ],
-      ),
-    ),
-    child: SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(height: 30),
-          Padding(
-            padding: EdgeInsets.all(10),
-            child: Column(
-              children: <Widget>[
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Image.asset(
-                        'assets/LogoApp.png',
-                        height: 150,
-                        width: 150,
-                      ),
-                      Text(
-                        "Hola, Rodrigo",
-                        style: TextStyle(color: Colors.white, fontSize: 40),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 5),
-          // Contenedor blanco con fecha y título
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Fecha actual
-                Text(
-                  "Fecha: 24/1/2025",
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-                SizedBox(height: 10),
-                // Título del historial con fondo azul
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  //color: Color(0xFF2D9CB1),
-                  child: Center(
-                    child: Text(
-                      "Historial de Evaluaciones",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                // Filtro por fecha con fondo azul
-                Container(
-                  padding: EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF2D9CB1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            labelText: "Fecha desde:",
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintText: "--/--/--",
-                            hintStyle: TextStyle(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white24,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            labelText: "Fecha hasta:",
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintText: "--/--/--",
-                            hintStyle: TextStyle(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white24,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Icon(Icons.refresh, color: Color(0xFF2D9CB1)),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(height: 20),
-
-                // Tabla de resultados
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: MaterialStateColor.resolveWith((states) => Color(0xFF2D9CB1)),
-                    dataRowColor: MaterialStateColor.resolveWith((states) => Color(0xFFDFEFF2)),
-                    columns: [
-                      DataColumn(
-                        label: Text(
-                          "Fecha",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          "Hora",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          "Resultado",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    rows: [
-                      DataRow(cells: [
-                        DataCell(Text("25/1/2025")),
-                        DataCell(Text("18:00")),
-                        DataCell(Text("Gravedad Leve")),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text("26/1/2025")),
-                        DataCell(Text("13:15")),
-                        DataCell(Text("Gravedad Severa")),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text("27/1/2025")),
-                        DataCell(Text("10:30")),
-                        DataCell(Text("Gravedad Leve")),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text("28/1/2025")),
-                        DataCell(Text("9:00")),
-                        DataCell(Text("Gravedad Leve")),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text("29/1/2025")),
-                        DataCell(Text("8:15")),
-                        DataCell(Text("Gravedad Severa")),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text("30/1/2025")),
-                        DataCell(Text("19:30")),
-                        DataCell(Text("Gravedad Leve")),
-                      ]),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-// Pagina de Indicadores
-Widget _buildStatisticsPage() {
-  return Center(
-    child: Text(
-      "Indicadores",
-      style: TextStyle(fontSize: 24),
-    ),
-  );
-}
-
-// Página de Perfil
-Widget _buildProfilePage() {
-  return Center(
-    child: Text(
-      "Página de Perfil",
-      style: TextStyle(fontSize: 24),
-    ),
-  );
-}
 
 void main() {
   runApp(MaterialApp(
@@ -562,4 +471,16 @@ void main() {
     home: EvaluationsView(),
   ));
 
+}
+
+Future<void> _registerEvaluationUser(BuildContext context,
+    Evaluation evaluation, String resultEvaluation, String uidUser) async {
+  try {
+    await context
+        .read<EvaluationsRepository>()
+        .registerEvaluationUser("Rodrigo", evaluation, resultEvaluation, uidUser);
+    print('Registro exitoso');
+  } catch (e) {
+    print('Error al registrar la evaluación: $e');
+  }
 }

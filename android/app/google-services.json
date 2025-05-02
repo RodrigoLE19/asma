@@ -12,7 +12,12 @@
           "package_name": "com.example.asma"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "512696535272-fk19ali279oomhbs8o8mm0hv3hj1dk9b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA0_vhix2aaU3M5vS5U2zVr6MRarvSYrWE"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "512696535272-fk19ali279oomhbs8o8mm0hv3hj1dk9b.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "512696535272-hsqitv39gp9d8re4i1h96uiob5q89mdu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.asma"
+              }
+            }
+          ]
         }
       }
     }

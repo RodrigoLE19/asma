@@ -1,8 +1,10 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../domain/repositories/authentication_repository.dart';
+import '../../../../domain/repositories/connectivity_repository.dart';
 import '../../../../main.dart';
+import '../../../global/controller/session_controller.dart';
 import '../../../routes/routes.dart';
 
 class SplashView extends StatefulWidget {
@@ -24,30 +26,34 @@ class _SplashViewState extends State<SplashView> {
     );
   }
 
-  Future<void> _init() async {
-    final injector= Injector.of(context);
-    final connectivityRepository = injector.connectivityRepository;
-    final hasInternet = await connectivityRepository.hasInternet;
-    print('* hasInternet $hasInternet');
-    if (hasInternet) {
-      final authenticationRepository = injector.authenticationRepository;
-      final isSigneIn = await authenticationRepository.isSigneIn;
-      if(isSigneIn){
-        final user = await authenticationRepository.getUserData();
-        if (mounted) {
-          if(user != null) {
-            //home
-            _goTo(Routes.home);
-          }else {
-            //sign in
-            _goTo(Routes.signIn);
-          }
-        }
-      }else if (mounted){
-        _goTo(Routes.signIn);
-      }
-    }else {}
+  Future<void>_init()async{
+    final routeName=await() async{
+      //SE USA CONTEXT.READ(), PORQUE ES LO MISMO QUE USAR PROVIDER.OF(CONTEXT)
+      final ConnectivityRepository connectivityRepository=context.read();
+      final AuthenticationRepository authenticationRepository= context.read();
+      final SessionController sessionController=context.read();
+      final hasInternet=await connectivityRepository.hasInternet;
 
+
+      if(!hasInternet){
+        return Routes.offline;
+      }
+      final isSignedIn= await authenticationRepository.isSigneIn;
+
+      if(!isSignedIn){
+        return Routes.signIn;
+      }
+
+      final user=await authenticationRepository.getUserData();
+      if(user!=null){
+        sessionController.setUser(user);
+        return Routes.menu_home;
+      }
+      return Routes.signIn;
+    }();
+    if(mounted){
+      _goTo(routeName);
+    }
   }
 
   void _goTo(String routeName) {

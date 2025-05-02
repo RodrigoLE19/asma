@@ -22,38 +22,8 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<User> registerUserFirebase(
-      String uid, String email,String names, String displayName,
-      String lastName, String gender, String birthday) async {
-    final user = User(
-      uid: uid,
-      email: email,
-      names: names,
-      displayName: displayName,
-      lastName: lastName,
-      gender: gender,
-      birthday: birthday,
-    );
-    await _firestore.collection('user').doc(uid).set(user.toMap());
-
-    return user;
-  }
-
-  @override
-  Future<User?> userRegisterFirebase(
-      String uid, String email, String displayName,
-      String gender, String birthday) {
-    // TODO: implement userRegisterFirebase
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Either<AccountUserFailure, User>> createUserAccountFirebase(
-      String email, String password, String names, String
-      lastname, String gender, String birthday) async{
-    // final sessionId=await _secureStorage.read(key: _key);
-    final user=await _accountUserFirebase.createAccountUserFirebaseAuthentication(
-        email, password, names, lastname, gender, birthday);
+  Future<Either<AccountUserFailure, User>> createUserAccountFirebase(String email, String password, String names, String lastname, String gender, String birthday) async {
+    final user=await _accountUserFirebase.createAccountUserFirebaseAuthentication(email, password, names, lastname, gender, birthday);
     if(user==1){
       return Either.left(AccountUserFailure.passwordWeak);
     }else if(user==2){
@@ -66,6 +36,28 @@ class AccountRepositoryImpl implements AccountRepository {
     }
   }
 
+  @override
+  Future<User> registerUserFirebase(String uid, String email, String names, String displayName, String lastName, String gender, String birthday) async {
+    final user = User(
+        uid: uid,
+        email: email,
+        names: names,
+        displayName: displayName,
+        lastName: lastName,
+        gender: gender,
+        birthday: birthday
+    );
+
+    await _firestore.collection('user').doc(uid).set(user.toMap());
+
+    return user;
+  }
+
+  @override
+  Future<User?> userRegisterFirebase(String uid, String email, String displayName, String gender, String birthday) {
+    // TODO: implement userRegisterFirebase
+    throw UnimplementedError();
+  }
 
 
 }

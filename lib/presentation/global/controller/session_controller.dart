@@ -1,4 +1,4 @@
-import '../../models/user.dart';
+import '../../../domain/models/user.dart';
 import '../state_notifier.dart';
 
 class SessionController extends StateNotifier<User?>{

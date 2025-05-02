@@ -17,6 +17,4 @@ class PreferencesRepositoryImpl implements PreferencesRepository{
     return _preferences.setString('typeLogin', typeLogin);
   }
 
-
-
 }

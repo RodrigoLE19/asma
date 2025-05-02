@@ -1,19 +1,11 @@
-
-import 'package:asma/presentation/models/splash/view/splash_view.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../register_user/view/register_user_view.dart';
-import '../../sign_in/view/sign_in_view.dart';
 
+import '../../../routes/routes.dart';
 
-class ScreenStart extends StatefulWidget {
+class ScreenStart extends StatelessWidget {
   const ScreenStart({super.key});
 
-  @override
-  State<StatefulWidget> createState() => _ScreenStartState();
-}
-
-class _ScreenStartState extends State<ScreenStart> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,12 +44,8 @@ class _ScreenStartState extends State<ScreenStart> {
                 minimumSize: Size(250, 50), // Tamaño del botón
               ),
               onPressed: () {
-                // Navega a la vista de cuestionario
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SplashView()),
-                  /*MaterialPageRoute(builder: (context) => RegisterUserView()),*/
-                );
+                Navigator.pushReplacementNamed(context, Routes.splash);
+
               },
               child: Text(
                 "Comenzar",
@@ -72,5 +60,5 @@ class _ScreenStartState extends State<ScreenStart> {
       ),
     );
   }
-
 }
+

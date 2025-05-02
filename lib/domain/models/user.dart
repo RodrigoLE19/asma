@@ -26,7 +26,7 @@ class User extends Equatable{
     return User(
       uid: doc.id,
       email: data['email'] ?? '',
-      names: data['names'] ?? '',
+      names: data['names'] ?? '', //AGREGUE LA 's' a "name"
       displayName: data['displayName'] ?? '',
       lastName: data['lastname'] ?? '',
       gender: data['gender'] ?? '',

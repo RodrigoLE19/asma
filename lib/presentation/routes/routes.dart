@@ -4,7 +4,7 @@ class Routes{
   static const splash = '/splash';
   static const signIn = '/sign-in';
   static const home = '/home';
-  static const offine = '/offine';
+  static const offline = '/offline';
   static const registerUser = '/registerUser';
   static const screen_start = '/screen_start';
   static const menu_home = '/menu_home';
