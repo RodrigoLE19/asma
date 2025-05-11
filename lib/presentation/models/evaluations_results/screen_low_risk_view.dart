@@ -93,7 +93,7 @@ class _ScreenLowRiskViewState extends State<ScreenLowRiskView> {
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               child: Text(
-                                'Su evaluación indica un bajo riesgo de desarrollar una crisis asmática',
+                                'Su evaluación indica una baja probabilidad de crisis asmática',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color(0xFF2ECC71),
@@ -110,7 +110,7 @@ class _ScreenLowRiskViewState extends State<ScreenLowRiskView> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          "Mantenga su tratamiento y evite factores desencadenantes",
+                          "Mantenga su tratamiento preventivo",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.black,

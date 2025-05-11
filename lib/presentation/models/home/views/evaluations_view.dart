@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:asma/domain/models/evaluation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -126,8 +127,10 @@ class _EvaluationsViewState extends State<EvaluationsView> {
         final response = await Http.Evaluation(body);
         print("RESPONSE");
         print(response.statusCode);
+        print('RESPUESTA DEL SERVIDOR: ${response.body}');
         final Map<String, dynamic> data = jsonDecode(response.body);
         final String resultModel = data['AsthmaDiagnosis'];
+        final double prediction_time = data['prediction_time_ms'];
         final String formateoResultadoModelo =
         resultModel.toString().replaceAll(RegExp(r'[\[\]\{\}]'), '');
         final String resultadoModeloTraducido;
@@ -143,7 +146,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
             print(resultadoModeloTraducido);
           }
           _registerEvaluationUser(
-              context, evaluation, resultadoModeloTraducido, uidUser);
+              context, evaluation, resultadoModeloTraducido, prediction_time, uidUser);
 
         } else {
           print("Error: ${response.statusCode}");
@@ -276,11 +279,12 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF073D47), // Color de fondo
+                        //minimumSize: Size(250, 50),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50), // Bordes redondeados
                         ),
-                        minimumSize: Size(250, 50), // Tamaño del botón
                       ),
+                      //minimumSize: Size(250, 50), // Tamaño del botón
                       onPressed: () {
                         // Navega a la vista de cuestionario
                         _EvaluateQustionary(context, "Rodrigo", "Masculino", "19/09/2001", _isEvaluar, uidUser);
@@ -474,11 +478,11 @@ void main() {
 }
 
 Future<void> _registerEvaluationUser(BuildContext context,
-    Evaluation evaluation, String resultEvaluation, String uidUser) async {
+    Evaluation evaluation, String resultEvaluation, double resultTiempo, String uidUser) async {
   try {
     await context
         .read<EvaluationsRepository>()
-        .registerEvaluationUser("Rodrigo", evaluation, resultEvaluation, uidUser);
+        .registerEvaluationUser("Rodrigo", evaluation, resultEvaluation, resultTiempo, uidUser);
     print('Registro exitoso');
   } catch (e) {
     print('Error al registrar la evaluación: $e');

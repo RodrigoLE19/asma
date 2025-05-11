@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/evaluation.dart';
 import '../models/evaluations_details.dart';
@@ -8,6 +10,7 @@ abstract class EvaluationsRepository{
       String nombrePaciente,
       Evaluation evaluation,
       String resultEvaluation,
+      double resultTiempo,
       String uidUser,
       );
   Future<List<EvaluationsDetails>> getEvaluationUser(

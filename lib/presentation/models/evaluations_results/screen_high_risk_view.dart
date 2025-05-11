@@ -91,7 +91,7 @@ class _ScreenHighRiskViewState extends State<ScreenHighRiskView> {
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               child: Text(
-                                'Su evaluación indica un alto riesgo de desarrollar una crisis asmática',
+                                'Su evaluación indica una alta probabilidad de crisis asmática',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color(0xFFD73535),

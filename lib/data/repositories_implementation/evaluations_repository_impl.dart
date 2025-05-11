@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:asma/domain/models/evaluation.dart';
 import 'package:asma/domain/models/evaluations_details.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,13 +9,14 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  Future<void> registerEvaluationUser(String nombrePaciente, Evaluation evaluation, String resultEvaluation, String uidUser) async{
+  Future<void> registerEvaluationUser(String nombrePaciente, Evaluation evaluation, String resultEvaluation, double resultTiempo, String uidUser) async{
     try {
       await _firestore.collection('evaluations').add({
         'nombrePaciente':nombrePaciente,
         'evaluation': evaluation.toMap(),
         // Asegúrate de tener un método toMap() en tu modelo Evaluation
         'resultEvaluation': resultEvaluation,
+        'resultTiempo': resultTiempo,
         'uidUser': uidUser,
         'createdAt': FieldValue.serverTimestamp(),
         'Evaluation':(resultEvaluation=='ALTO RIESGO')?'No Respondió':'No Necesario'
@@ -46,10 +49,13 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
         );
         final createdAt = (data['createdAt'] as Timestamp).toDate();
         final resultEvaluation = data['resultEvaluation'] as String;
+        //final resultTiempo = data['resultTiempo'] as double;
+        final resultTiempo = (data['resultTiempo'] as double?) ?? 0.0;
 
         return EvaluationsDetails(
           evaluation: evaluation,
           resultEvaluation: resultEvaluation,
+          resultTiempo: resultTiempo,
           date: createdAt,
           time: createdAt,
         );
