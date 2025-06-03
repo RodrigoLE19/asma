@@ -12,7 +12,7 @@ class AccountUserFirebase{
     return userCredential.user?.uid ?? '';
   }
   Future createAccountUserFirebaseAuthentication
-      (String email,String password,String names,String lastname,String gender,String birthday) async {
+      (String email,String password,String names,String lastname,String gender,String birthday, String doctorName, String doctorPhone) async {
     try {
       // Crear usuario en Firebase Authentication
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -38,6 +38,8 @@ class AccountUserFirebase{
           'displayName': firstName+' '+firsLastName , // AGREGUE LA 't' a "firsLastName"
           'gender': gender,
           'birthday': birthday,
+          'doctor_name': doctorName,
+          'doctor_phone': doctorPhone,
         });
         final doc = await _firestore.collection('user').doc(uid).get();
         if (doc.exists) {

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import '../../../../domain/enums_account.dart';
 import '../../../../domain/repositories/account_repository.dart';
 import '../../../../domain/repositories/authentication_repository.dart';
@@ -31,6 +32,8 @@ class _RegisterUserViewState extends State<RegisterUserView> {
   TextEditingController genderController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
+  TextEditingController doctor_nameController = TextEditingController();
+  TextEditingController doctor_phoneController = TextEditingController();
 
 
 
@@ -153,7 +156,7 @@ class _RegisterUserViewState extends State<RegisterUserView> {
                     ],
                   ),
                 ),
-                SizedBox(height: 70),
+                SizedBox(height: 20),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -280,7 +283,7 @@ class _RegisterUserViewState extends State<RegisterUserView> {
                                       _buildPasswordField(
                                         controller: confirmPasswordController,
                                         name: 'confirm_password',
-                                        hintText: "Confirmar Contraseña",
+                                        hintText: "Confirmar contraseña",
                                         isReadOnly: true,
                                         validator: (value) {
                                           final conf_password = _formKey.currentState?.fields['confirm_password']?.value;
@@ -291,23 +294,57 @@ class _RegisterUserViewState extends State<RegisterUserView> {
                                         },
                                       ),
                                       SizedBox(height: 20),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(bottom: BorderSide(color: Color(0xFF2D9CB1), width: 1.5)),
+                                        ),
+                                        child: FormBuilderTextField(
+                                          keyboardType: TextInputType.name,
+                                          textCapitalization: TextCapitalization.words,
+                                          name: 'doctor_name',
+                                          controller: doctor_nameController,
+                                          style: TextStyle(color: Color(0xFF145E72)),
+                                          decoration: InputDecoration(
+                                            prefixIcon: Icon(Icons.person, color: Color(0xFF2D9CB1)),
+                                            hintText: "Nombre de su médico (opcional)",
+                                            hintStyle: TextStyle(color: Color(0xFF2D9CB1)),
+                                            border: InputBorder.none, // Elimina bordes no deseados
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 20),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(bottom: BorderSide(color: Color(0xFF2D9CB1), width: 1.5)),
+                                        ),
+                                        child: FormBuilderTextField(
+                                          keyboardType: TextInputType.phone,
+                                          textCapitalization: TextCapitalization.words,
+                                          name: 'doctor_phone',
+                                          controller: doctor_phoneController,
+                                          style: TextStyle(color: Color(0xFF145E72)),
+                                          onChanged: (value) {
+                                            if(value!.length>=9){
+                                              FocusScope.of(context).unfocus();
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            prefixIcon: Icon(Icons.phone, color: Color(0xFF2D9CB1)),
+                                            hintText: "Teléfono de su médico (opcional)",
+                                            hintStyle: TextStyle(color: Color(0xFF2D9CB1)),
+                                            border: InputBorder.none, // Elimina bordes no deseados
+                                            prefixText: '+51 ',
+                                          ),
+                                          //initialValue: '+51',
+                                        ),
+                                      ),
+                                      SizedBox(height: 20),
                                       if (controller.fetching)
                                         CircularProgressIndicator()
                                       else
                                         MaterialButton(
                                           onPressed: () async {
-                                            /*_formKey.currentState?.save();
-                                            if(_formKey.currentState?.validate()==true) {
-                                              final v = _formKey.currentState?.value;
-                                              var result = await _auth.createAcount(v?['email'], v?['password']);
-                                              if(result ==1){
-                                                print("Error en el usuario o contraseña");
-                                              } else if(result ==2){
-                                                print("Error en el usuario o contraseña");
-                                              }else if (result != null) {
-                                                Navigator.pushNamed(context, Routes.evaluations);
-                                              }
-                                            }*/
+                                            
                                             _formKey.currentState?.save();
                                             if (_formKey.currentState!.validate() ==
                                                 true) {
@@ -317,12 +354,12 @@ class _RegisterUserViewState extends State<RegisterUserView> {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(
                                                       content: Text("Campos vacios")));
-                                              //content: Text(AppLocalizations.of(context)!.empty)));
+                                              
                                             }
                                           },
                                           child: Text(
                                             "Registrarte",
-                                            //AppLocalizations.of(context)!.lapp,
+                                            
                                             style: TextStyle(
                                                 color: Colors.white, fontWeight: FontWeight.bold),
                                           ),
@@ -600,7 +637,7 @@ class _RegisterUserViewState extends State<RegisterUserView> {
     );
   }
 
-  Future<void> _submitAccountUser(BuildContext context,String names,String lastname,String gender,String birthday)async{
+  Future<void> _submitAccountUser(BuildContext context,String names,String lastname,String gender,String birthday, String doctorName, String doctorPhone)async{
     final SignInController controller= context.read();
     controller.onFetchingChanged(true);
     final result=await context.read<AccountRepository>().createUserAccountFirebase(
@@ -609,7 +646,9 @@ class _RegisterUserViewState extends State<RegisterUserView> {
         names,
         lastname,
         gender,
-        birthday
+        birthday,
+        doctorName,
+        doctorPhone
     );
     if(!mounted){
       return;
@@ -666,13 +705,13 @@ class _RegisterUserViewState extends State<RegisterUserView> {
           );
         },
             (userUid) async {
-              print("================================================================================================================");
-              print(userUid);
-          // Asegúrate de que los valores no sean nulos
-          // final email = controller.email;
-          // final password = passwordController.text;
+              final v = _formKey.currentState?.value;
+              String doctorPhone = v?['doctor_phone'] ?? '';
+              doctorPhone = doctorPhone.replaceAll(RegExp(r'\D'), ''); 
 
-          // Aquí puedes crear un mapa con los datos del usuario
+              if (doctorPhone.isNotEmpty && !doctorPhone.startsWith('51')) {
+                doctorPhone = '51' + doctorPhone;
+              }
           final userData = {
             'names': v?['names'],
             'lastname': v?['lastname'],
@@ -681,15 +720,11 @@ class _RegisterUserViewState extends State<RegisterUserView> {
             'birthday': v?['date'],
             'email': controller.email,
             'password': passwordController.text,
+            'doctor_name': v?['doctor_name'],
+            'doctor_phone': doctorPhone,
           };
-
-          // Registrar el usuario en Firestore
           await FirebaseFirestore.instance.collection('user').doc(userUid).set(userData);
-              controller.onFetchingChanged(false);
-              print("======================================================================================================");
-              print(controller.fetching);
-
-          // Actualiza el sessionController con los datos del usuario
+          controller.onFetchingChanged(false);
           SessionController sessionController = context.read<SessionController>();
           sessionController.setUser(User(
             uid: userUid,
@@ -699,12 +734,10 @@ class _RegisterUserViewState extends State<RegisterUserView> {
             gender: v?['gender'],
             birthday: v?['date'],
             email: controller.email,
-            // Añade más campos según lo necesites
+            doctorName: v?['doctor_name'], 
+            doctorPhone: doctorPhone,
           ));
-
           controller.onFetchingChanged(false);
-          print("ESTADO DE FETCHING");
-          print(controller.fetching);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("USUARIO REGISTRADO CORRECTAMENTE")),
           );

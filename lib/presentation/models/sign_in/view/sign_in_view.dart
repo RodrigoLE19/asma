@@ -175,18 +175,6 @@ class _SignInViewState extends State<SignInView> {
                                               else
                                                 MaterialButton(
                                                   onPressed: () async {
-                                                    /*_formKey.currentState?.save();
-                                                    if(_formKey.currentState?.validate()==true) {
-                                                      final v = _formKey.currentState?.value;
-                                                      var result = await _auth.singInEmailAndPassword(v?['email'], v?['password']);
-                                                      if(result ==1){
-                                                        print("Error en el usuario o contraseña");
-                                                      } else if(result ==2){
-                                                        print("Error en el usuario o contraseña");
-                                                      }else if (result != null) {
-                                                        Navigator.pushNamed(context, Routes.evaluations);
-                                                      }
-                                                    }*/
                                                     _formKey.currentState?.save();
                                                     if (_formKey.currentState!.validate() ==
                                                         true) {
@@ -195,12 +183,12 @@ class _SignInViewState extends State<SignInView> {
                                                       ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
                                                               content: Text("Campos vacios")));
-                                                      //content: Text(AppLocalizations.of(context)!.empty)));
+                                                      
                                                     }
                                                   },
                                                   child: Text(
                                                     "Inciar sesion",
-                                                    //AppLocalizations.of(context)!.lapp,
+                                            
                                                     style: TextStyle(
                                                         color: Colors.white, fontWeight: FontWeight.bold),
                                                   ),
@@ -297,12 +285,10 @@ class _SignInViewState extends State<SignInView> {
   Future<void> _submit(BuildContext context)async{
     final SignInController controller= context.read();
     controller.onFetchingChanged(true);
-    //print("Antes de final resilts");
     final result=await context.read<AuthenticationRepository>().signInFirebaseAuthentication(
       controller.email,
       controller.password,
     );
-    //print("despues de esta funcion");
     if(!mounted){
       return;
     }
@@ -311,7 +297,6 @@ class _SignInViewState extends State<SignInView> {
         controller.onFetchingChanged(false);
         final meesage={
           SignInFailure.userNotFound:"Usuario no encontrado",
-          //SignInFailure.userNotFound:AppLocalizations.of(context)!.userNotFound,
           SignInFailure.wrongPassword:'Contraseña incorrecta',
         } [failure];
         ScaffoldMessenger.of(context).showSnackBar(

@@ -9,18 +9,20 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  Future<void> registerEvaluationUser(String nombrePaciente, Evaluation evaluation, String resultEvaluation, double resultTiempo, String uidUser) async{
+  Future<void> registerEvaluationUser(Evaluation evaluation, 
+  String resultEvaluation, String tiempoDeteccionInicio, 
+  String tiempoDeteccionFin, double resultTiempo, 
+  String uidUser) async{
     try {
       await _firestore.collection('evaluations').add({
-        'nombrePaciente':nombrePaciente,
         'evaluation': evaluation.toMap(),
-        // Asegúrate de tener un método toMap() en tu modelo Evaluation
         'resultEvaluation': resultEvaluation,
+        'tiempoDeteccionInicio': tiempoDeteccionInicio,
+        'tiempoDeteccionFin': tiempoDeteccionFin,
         'resultTiempo': resultTiempo,
         'uidUser': uidUser,
         'createdAt': FieldValue.serverTimestamp(),
-        'Evaluation':(resultEvaluation=='ALTO RIESGO')?'No Respondió':'No Necesario'
-        // Guarda la fecha de creación
+        'Evaluation':(resultEvaluation=='ALTA PROBABILIDAD')?'No Respondió':'No Necesario'
       });
     } catch (e) {
       // Manejar el error
@@ -50,11 +52,16 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
         final createdAt = (data['createdAt'] as Timestamp).toDate();
         final resultEvaluation = data['resultEvaluation'] as String;
         //final resultTiempo = data['resultTiempo'] as double;
+        print(data);
+        final tiempoDeteccionInicio = data['tiempoDeteccionInicio'] as String;
+        final tiempoDeteccionFin = data['tiempoDeteccionFin'] as String;
         final resultTiempo = (data['resultTiempo'] as double?) ?? 0.0;
 
         return EvaluationsDetails(
           evaluation: evaluation,
           resultEvaluation: resultEvaluation,
+          tiempoDeteccionInicio: tiempoDeteccionInicio,
+          tiempoDeteccionFin: tiempoDeteccionFin,
           resultTiempo: resultTiempo,
           date: createdAt,
           time: createdAt,
@@ -86,13 +93,8 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
   //Funcion para traer las evaluaciones filtrandolas por una fecha
   Future<QuerySnapshot> fetchEvaluationsByDate(String userId, DateTime selectedDate) async{
     try {
-      print("filtro por fecha");
-      print(selectedDate);
-      // Definir el rango de tiempo para el día seleccionado
       final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
       final endOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59);
-
-      // Realizar la consulta filtrando por uidUser y la fecha
       final querySnapshot = await FirebaseFirestore.instance
           .collection('evaluations')
           .where('uidUser', isEqualTo: userId)

@@ -9,6 +9,8 @@ class User extends Equatable{
   final String lastName;
   final String gender;
   final String birthday;
+  final String doctorName; //NUEVO CAMPO
+  final String doctorPhone; //NUEVO CAMPO
 
   User({
     required this.uid,
@@ -18,6 +20,8 @@ class User extends Equatable{
     required this.lastName,
     required this.gender,
     required this.birthday,
+    required this.doctorName,
+    required this.doctorPhone,
   });
 
   // Método para crear una instancia de User desde un documento de Firestore
@@ -31,6 +35,8 @@ class User extends Equatable{
       lastName: data['lastname'] ?? '',
       gender: data['gender'] ?? '',
       birthday: data['birthday'] ?? '',
+      doctorName: data['doctor_name'] ?? '',
+      doctorPhone: data['doctor_phone'] ?? '',
     );
   }
 
@@ -43,6 +49,8 @@ class User extends Equatable{
       'lastname': lastName,
       'gender': gender,
       'birthday': birthday,
+      'doctor_name': doctorName,
+      'doctor_phone': doctorPhone,
     };
   }
 

@@ -22,8 +22,8 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<Either<AccountUserFailure, User>> createUserAccountFirebase(String email, String password, String names, String lastname, String gender, String birthday) async {
-    final user=await _accountUserFirebase.createAccountUserFirebaseAuthentication(email, password, names, lastname, gender, birthday);
+  Future<Either<AccountUserFailure, User>> createUserAccountFirebase(String email, String password, String names, String lastname, String gender, String birthday, String doctorName, String doctorPhone) async {
+    final user=await _accountUserFirebase.createAccountUserFirebaseAuthentication(email, password, names, lastname, gender, birthday, doctorName, doctorPhone);
     if(user==1){
       return Either.left(AccountUserFailure.passwordWeak);
     }else if(user==2){
@@ -37,7 +37,7 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<User> registerUserFirebase(String uid, String email, String names, String displayName, String lastName, String gender, String birthday) async {
+  Future<User> registerUserFirebase(String uid, String email, String names, String displayName, String lastName, String gender, String birthday, String doctorName, String doctorPhone) async {
     final user = User(
         uid: uid,
         email: email,
@@ -45,7 +45,9 @@ class AccountRepositoryImpl implements AccountRepository {
         displayName: displayName,
         lastName: lastName,
         gender: gender,
-        birthday: birthday
+        birthday: birthday,
+        doctorName: doctorName,
+        doctorPhone: doctorPhone
     );
 
     await _firestore.collection('user').doc(uid).set(user.toMap());
@@ -54,7 +56,7 @@ class AccountRepositoryImpl implements AccountRepository {
   }
 
   @override
-  Future<User?> userRegisterFirebase(String uid, String email, String displayName, String gender, String birthday) {
+  Future<User?> userRegisterFirebase(String uid, String email, String displayName, String gender, String birthday, String doctorName, String doctorPhone) {
     // TODO: implement userRegisterFirebase
     throw UnimplementedError();
   }

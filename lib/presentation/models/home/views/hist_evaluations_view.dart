@@ -106,7 +106,7 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
                               ),
                               TextSpan(
                                 text: '$datosUsuario',
-                                style: TextStyle(color: Color(0xFF073D47), fontSize: 36),
+                                style: TextStyle(color: Colors.white, fontSize: 36),
                               ),
 
                             ],
@@ -249,105 +249,82 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
                                 } else {
                                   final evaluations = snapshot.data!.docs;
                                   // Mostrar las evaluaciones dinámicamente en el Table
-                                  return Table(
-                                    border: TableBorder.symmetric(
-                                      inside: BorderSide(
-                                          width: 1, color: Colors.black),
-                                    ),
-                                    columnWidths: const <int, TableColumnWidth>{
-                                      0: FlexColumnWidth(45),
-                                      1: FlexColumnWidth(25),
-                                      2: FlexColumnWidth(70),
-                                      3: FlexColumnWidth(32),
-                                    },
-                                    defaultVerticalAlignment:
-                                    TableCellVerticalAlignment.middle,
-                                    children: [
-                                      TableRow(
-                                        decoration: BoxDecoration(
-                                            color: Color(0XFF2D9CB1)),
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.all(4.0),
-                                            child: Text(
-                                              //AppLocalizations.of(context)!.dateTable,
-                                              'Fecha',
-                                              style:
-                                              TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text(
-                                              //AppLocalizations.of(context)!.hourTable,
-                                              'Hora',
-                                              style:
-                                              TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text(
-                                              //AppLocalizations.of(context)!.resulTable,
-                                              'Resultado',
-                                              style:
-                                              TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text(
-                                              //AppLocalizations.of(context)!.resulTable,
-                                              'Tiempo (ml)',
-                                              style:
-                                              TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ],
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Table(
+                                      border: TableBorder.symmetric(
+                                        inside: BorderSide(width: 1, color: Colors.black),
                                       ),
-                                      ...evaluations.map((doc) {
-                                        final data = doc.data()
-                                        as Map<String, dynamic>;
-                                        final createdAt =
-                                        (data['createdAt']
-                                        as Timestamp)
-                                            .toDate();
-                                        final resultEvaluation = data['resultEvaluation'] as String;
-                                        //final resultTiempo = (data['resultTiempo'] as num)?.toStringAsFixed(2) ?? '0.00';
-                                        final resultTiempo = (data['resultTiempo'] as num?)?.toStringAsFixed(2) ?? '0.00';
+                                      // Usamos IntrinsicColumnWidth para que el ancho se ajuste al contenido
+                                      columnWidths: const <int, TableColumnWidth>{
+                                        0: IntrinsicColumnWidth(),
+                                        1: IntrinsicColumnWidth(),
+                                        2: IntrinsicColumnWidth(),
+                                        3: IntrinsicColumnWidth(),
+                                        4: IntrinsicColumnWidth(),
+                                        5: IntrinsicColumnWidth(),
+                                      },
+                                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                      children: [
+                                        TableRow(
+                                          decoration: BoxDecoration(color: Color(0XFF2D9CB1)),
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.all(4.0),
+                                              child: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text('Hora', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text('Resultado', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text('Tiempo Inicio (ml)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text('Tiempo Fin (ml)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Text('Tiempo (ml)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                            ),
+                                          ],
+                                        ),
+                                        ...evaluations.map((doc) {
+                                          final data = doc.data() as Map<String, dynamic>;
+                                          final createdAt = (data['createdAt'] as Timestamp).toDate();
+                                          final resultEvaluation = data['resultEvaluation'] as String;
 
-                                        return _buildTableRow(
-                                            DateFormat('dd/MM/yyyy')
-                                                .format(createdAt),
-                                            DateFormat('HH:mm')
-                                                .format(createdAt),
+                                          final tiempoDeteccionInicioSinFormato = data['tiempoDeteccionInicio'] as String? ?? '';
+                                          final tiempoDeteccionInicio = tiempoDeteccionInicioSinFormato.split(" ").length > 1
+                                              ? tiempoDeteccionInicioSinFormato.split(" ")[1]
+                                              : '';
+
+                                          final tiempoDeteccionFinSinFormato = data['tiempoDeteccionFin'] as String? ?? '';
+                                          final tiempoDeteccionFin = tiempoDeteccionFinSinFormato.split(" ").length > 1
+                                              ? tiempoDeteccionFinSinFormato.split(" ")[1]
+                                              : '';
+
+                                          final resultTiempo = (data['resultTiempo'] as num?)?.toStringAsFixed(2) ?? '0.00';
+
+                                          return _buildTableRow(
+                                            DateFormat('dd/MM/yyyy').format(createdAt),
+                                            DateFormat('HH:mm').format(createdAt),
                                             resultEvaluation,
-                                            resultTiempo
-                                        );
-                                      }).toList(),
-                                      /*...evaluations.map((doc) {
-                                            final data = doc.data() as Map<
-                                                String,
-                                                dynamic>;
-                                            final createdAt = (data['createdAt'] as Timestamp)
-                                                .toDate();
-                                            final resultEvaluation = data['resultEvaluation'] as String;
-
-                                            return _buildTableRow(
-                                                context,
-                                                DateFormat('dd/MM/yyyy').format(
-                                                    createdAt),
-                                                DateFormat('HH:mm').format(createdAt),
-                                                resultEvaluation,
-                                                user.uid
-                                            );
-                                          }).toList(),*/
-                                    ],
+                                            tiempoDeteccionInicio,
+                                            tiempoDeteccionFin,
+                                            resultTiempo,
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
                                   );
+
                                 }
                               },
                             ),
@@ -365,7 +342,8 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
       }
     );
   }
-  TableRow _buildTableRow(/*BuildContext context,*/ String fecha, String hora, String resultado, String tiempo/*, String uidUser*/) {
+  TableRow _buildTableRow(/*BuildContext context,*/ String fecha, String hora, String resultado,
+      String tiempoInicio, String tiempoFin,String tiempo/*, String uidUser*/) {
     return TableRow(
       decoration: BoxDecoration(color: Color(0xFFE5EFF4)),
       children: [
@@ -380,6 +358,14 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
         Padding(
           padding: EdgeInsets.all(5.0),
           child: Text(resultado),
+        ),
+        Padding(
+          padding: EdgeInsets.all(5.0),
+          child: Text(tiempoInicio),
+        ),
+        Padding(
+          padding: EdgeInsets.all(5.0),
+          child: Text(tiempoFin),
         ),
         Padding(
           padding: EdgeInsets.all(5.0),

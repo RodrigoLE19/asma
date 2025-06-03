@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 class Http {
   static Future<http.Response> Evaluation(Map<String, dynamic> body) async {
-    /*final ipURL = '192.168.1.6'; //LOCAL SERVIDOR
+    /*final ipURL = 'http://192.168.1.5:8080'; //LOCAL SERVIDOR
+    //final ipURLGCP = 'https://modeloapitesis-532594014132.us-east1.run.app';
     //final ipURL = '172.20.10.5'; //LOCAL IP CELULAR
     final bodyJson=jsonEncode(body);
     return await http.post(
@@ -14,11 +15,11 @@ class Http {
 
       Uri.parse(
 
-          'http://$ipURL:8080/evaluation'),
+          '$ipURL/evaluation'),
       body: bodyJson,
-    );*/
+    )*/
     // URL del servidor desplegado en Google Cloud Platform
-    final ipURLGCP = 'https://modeloapitesis-532594014132.us-east1.run.app';
+    final ipURLRENDER = 'https://modelo-crisis-asmatica.onrender.com';
 
     // Asegurarse de que los valores sean del tipo correcto (números como números, no como strings)
     final Map<String, dynamic> formattedBody = {
@@ -38,7 +39,7 @@ class Http {
 
     try {
       final response = await http.post(
-        Uri.parse('$ipURLGCP/evaluation'),
+        Uri.parse('$ipURLRENDER/evaluation'),
         headers: {
           'Content-Type': 'application/json',
         },

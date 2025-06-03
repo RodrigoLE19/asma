@@ -37,15 +37,12 @@ class _HomeViewBody extends StatelessWidget {
     final SessionController sessionController=context.read();
     final user=sessionController.state!;
     var prefs=PreferenciasUsuario();
-    //context.read<NotificationsBloc>().requestPermission();
     storeToken(context, user.uid, prefs.token);
     print('TOKEN DE MOVIL: '+prefs.token);
     final Map<String, dynamic>? args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    // final tl=args['typeLogin'];
     if (args != null) {
       prefs.tipoLogin = args['typeLogin'];
     }
-    // final Map<String, dynamic>? arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final uiProviderSelected = Provider.of<MenuHomeProviderController>(context);
     final currentIndex = uiProviderSelected.seleccionMenu;
 
@@ -56,7 +53,6 @@ class _HomeViewBody extends StatelessWidget {
         return HistoryEvaluationsView();
       default:
         return UserProfileView();
-        //return UserProfileView(typeLogin: prefs.tipoLogin,);
     }
   }
 

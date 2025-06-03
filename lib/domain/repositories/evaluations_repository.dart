@@ -7,9 +7,11 @@ import '../models/evaluations_details.dart';
 abstract class EvaluationsRepository{
 
   Future<void> registerEvaluationUser(
-      String nombrePaciente,
+      /*String nombrePaciente,*/
       Evaluation evaluation,
       String resultEvaluation,
+      String tiempoDeteccionInicio,
+      String tiempoDeteccionFin,
       double resultTiempo,
       String uidUser,
       );

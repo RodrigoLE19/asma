@@ -92,9 +92,8 @@ class _UserProfileViewState extends State<UserProfileView> {
                               ),
                               TextSpan(
                                 text: '${userData['displayName']}',
-                                style: TextStyle(color: Color(0xFF073D47), fontSize: 36),
+                                style: TextStyle(color: Colors.white, fontSize: 36),
                               ),
-
                             ],
                           ),
                         ),

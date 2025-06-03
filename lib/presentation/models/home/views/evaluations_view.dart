@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'package:asma/domain/models/evaluation.dart';
+import 'package:asma/presentation/global/dialogs/show_loader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,8 @@ class _EvaluationsViewState extends State<EvaluationsView> {
   final TextEditingController _altura = TextEditingController();
   final TextEditingController _resultadoIMC = TextEditingController();
 
+  //bool _isLoading = false; // ← LINEA DE CARGO BOTON EVALAUAR
+
   Map<int, String> respuestas = {};
   bool highRiskGlobal = false;
   bool respondeGlobal = false;
@@ -38,6 +41,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
   String? _errorMessageMentHlth;
   String _nombrePaciente = '';
   String _generoPaciente = 'MASCULINO';
+  String _fechaNacimientoPaciente = '';
   bool _isEvaluar = false; // Indica si se va a evaluar a otra persona
 
   void _onWheezingChanged(int? value) {
@@ -92,17 +96,17 @@ class _EvaluationsViewState extends State<EvaluationsView> {
     double altura_cm = altura / 100;
     double imc = peso / (altura_cm * altura_cm);
     // Convertirlo a 2 decimales por si acaso
-    String resultado = imc.toStringAsFixed(2);
+    String resultado = imc.toStringAsFixed(1);
 
     setState(() {
       _resultadoIMC.text = resultado;
     });
   }
 
-  Future<void> _EvaluateQustionary(BuildContext context, String nombrePaciente, String generoPaciente, fechaNacimientoPaciente, bool isEvaluar,
+  Future<void> _EvaluateQustionary(BuildContext context,
+  String generoPaciente, fechaNacimientoPaciente, bool isEvaluar,
       String uidUser) async{
     if (validarRespuestas() && _resultadoIMC.text.isNotEmpty) {
-      print('Todas las preguntas fueron respondidas: $respuestas');
       double resultado_IMC = double.parse(_resultadoIMC.text);
       int resultado_pregunta2 = respuestas[2] == "Sí" ? 1 : 0;
       int resultado_pregunta3 = respuestas[3] == "Sí" ? 1 : 0;
@@ -114,39 +118,32 @@ class _EvaluationsViewState extends State<EvaluationsView> {
           questionShortnessOfBreath: resultado_pregunta3,
           questionChestTightness: resultado_pregunta4,
           questionCoughing: resultado_pregunta5);
-      // Convertir la instancia a un mapa
       Map<String, dynamic> evaluationMap = evaluation.toMap();
-
-      // Convertir los valores del mapa a strings para el cuerpo del POST
       Map<String, String> body =
       evaluationMap.map((key, value) => MapEntry(key, value.toString()));
-      //print(nombrePaciente);
-      print("CUERPO BODY");
-      print(body.toString());
       try {
         final response = await Http.Evaluation(body);
-        print("RESPONSE");
-        print(response.statusCode);
-        print('RESPUESTA DEL SERVIDOR: ${response.body}');
         final Map<String, dynamic> data = jsonDecode(response.body);
         final String resultModel = data['AsthmaDiagnosis'];
+        final String start_time = data['start_time'];
+        final String end_time = data['end_time'];
         final double prediction_time = data['prediction_time_ms'];
         final String formateoResultadoModelo =
         resultModel.toString().replaceAll(RegExp(r'[\[\]\{\}]'), '');
         final String resultadoModeloTraducido;
-        // Mostrar el resultado en un Snackbar
         if (response.statusCode == 200) {
           if (formateoResultadoModelo == '0') {
             Navigator.pushReplacementNamed(context, Routes.screen_low_risk);
-            resultadoModeloTraducido = 'BAJO RIESGO';
+            resultadoModeloTraducido = 'BAJA PROBABILIDAD';
             print(resultadoModeloTraducido);
           } else {
             Navigator.pushReplacementNamed(context, Routes.screen_high_risk);
-            resultadoModeloTraducido = 'ALTO RIESGO';
+            resultadoModeloTraducido = 'ALTA PROBABILIDAD';
             print(resultadoModeloTraducido);
           }
           _registerEvaluationUser(
-              context, evaluation, resultadoModeloTraducido, prediction_time, uidUser);
+              context, evaluation, resultadoModeloTraducido, start_time,
+              end_time, prediction_time, uidUser);
 
         } else {
           print("Error: ${response.statusCode}");
@@ -233,7 +230,7 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                         ),
                         TextSpan(
                           text: nombreUsuario,
-                          style: TextStyle(color: Color(0xFF073D47), fontSize: 36),
+                          style: TextStyle(color: Colors.white, fontSize: 36),
                         ),
                       ],
                     ),
@@ -286,8 +283,20 @@ class _EvaluationsViewState extends State<EvaluationsView> {
                       ),
                       //minimumSize: Size(250, 50), // Tamaño del botón
                       onPressed: () {
+                        showLoader(
+                            context,
+                            (_EvaluateQustionary(
+                                context,
+                              /*_nombrePaciente,*/
+                              _generoPaciente,
+                              _fechaNacimientoPaciente,
+                              _isEvaluar,
+                              uidUser)));
+
                         // Navega a la vista de cuestionario
-                        _EvaluateQustionary(context, "Rodrigo", "Masculino", "19/09/2001", _isEvaluar, uidUser);
+                        //_EvaluateQustionary(context, "Rodrigo", "Masculino", "19/09/2001", _isEvaluar, uidUser);
+
+
                       },
                       child: Text(
                         "Evaluar",
@@ -478,11 +487,13 @@ void main() {
 }
 
 Future<void> _registerEvaluationUser(BuildContext context,
-    Evaluation evaluation, String resultEvaluation, double resultTiempo, String uidUser) async {
+    Evaluation evaluation, String resultEvaluation, String tiempoDeteccionInicio,
+    String tiempoDeteccionFin, double resultTiempo, String uidUser) async {
   try {
     await context
         .read<EvaluationsRepository>()
-        .registerEvaluationUser("Rodrigo", evaluation, resultEvaluation, resultTiempo, uidUser);
+        .registerEvaluationUser(/*"Rodrigo",*/ evaluation, resultEvaluation, tiempoDeteccionInicio,
+        tiempoDeteccionFin, resultTiempo, uidUser);
     print('Registro exitoso');
   } catch (e) {
     print('Error al registrar la evaluación: $e');
