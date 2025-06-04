@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:asma/domain/models/evaluation.dart';
 import 'package:asma/domain/models/evaluations_details.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../domain/repositories/evaluations_repository.dart';
 
 class EvaluationsRepositoryImpl implements EvaluationsRepository {
@@ -172,4 +173,121 @@ class EvaluationsRepositoryImpl implements EvaluationsRepository {
       print("Error al actualizar la evaluación: $e");
     }
   }
+
+  Future<List<double>> calcularPromedioTiempoPostEvaluationAll() async {
+    try {
+      final startOfDay = DateTime(2025, 5, 23, 00, 00, 00);
+      // Construir la consulta con filtros opcionales
+      final querySnapshot = await FirebaseFirestore.instance.collection('evaluations')
+          .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
+          .get();
+
+      // Agregar filtro por fecha si se proporciona
+      /*if (fechaFiltro != null) {
+        DateTime startOfDay = DateTime(fechaFiltro.year, fechaFiltro.month, fechaFiltro.day);
+        DateTime endOfDay = startOfDay.add(Duration(days: 1));
+        query = query
+            .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
+            .where('createdAt', isLessThan: endOfDay);
+      }*/
+
+      // Agregar filtro personalizado si se proporciona
+      /*if (campoFiltro != null && valorFiltro != null) {
+        query = query.where(campoFiltro, isEqualTo: valorFiltro);
+      }*/
+
+      //final querySnapshot = await query.get();
+
+      /*if (querySnapshot.docs.isEmpty) {
+        print("No hay registros en la colección evaluations.");
+        return 0.0;
+      }*/
+
+      double totalTiempo = 0;
+      int count = 0;
+
+      // Iterar sobre los documentos y sumar los valores de resultTiempo
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+
+        // Verificar que existe el campo resultTiempo
+        if (data['resultTiempo'] != null) {
+          // Convertir a double en caso de que sea int o String
+          double tiempoValue = 0;
+
+          if (data['resultTiempo'] is num) {
+            tiempoValue = data['resultTiempo'].toDouble();
+          } else if (data['resultTiempo'] is String) {
+            tiempoValue = double.tryParse(data['resultTiempo']) ?? 0;
+          }
+
+          totalTiempo += tiempoValue;
+          count++;
+
+          // Debug: mostrar cada valor
+          print('Documento ID: ${doc.id}, resultTiempo: $tiempoValue');
+        }
+      }
+
+      // Calcular el promedio
+      double promedio = count > 0 ? totalTiempo / count : 0.0;
+
+      print('Total documentos procesados: $count');
+      print('Suma total de tiempos: $totalTiempo');
+      print('Promedio calculado: ${promedio.toStringAsFixed(2)}');
+
+      return [promedio, count.toDouble()];
+
+    } catch (e) {
+      throw Exception('Error al calcular el promedio de tiempo en postevaluation: $e');
+    }
+  }
+
+  Future<List<double>> calcularPromedioTiempoPostEvaluationByDate(DateTime selectedDate) async {
+    try {
+      // Definir el rango de fechas
+      DateTime startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      DateTime endOfDay = startOfDay.add(Duration(days: 1));
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('evaluations')
+          .where('createdAt', isGreaterThanOrEqualTo: startOfDay)
+          .where('createdAt', isLessThan: endOfDay)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print("No hay registros para esa fecha.");
+        return [0.0,0.0]; // Retorna 0 si no hay registros
+      }
+
+      double totalMilisegundos = 0;
+      int count = 0;
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        if (data['createdAt'] != null) {
+          // Convertir a double en caso de que sea int o String
+          double tiempoValue = 0;
+
+          if (data['resultTiempo'] is num) {
+            tiempoValue = data['resultTiempo'].toDouble();
+          } else if (data['resultTiempo'] is String) {
+            tiempoValue = double.tryParse(data['resultTiempo']) ?? 0;
+          }
+
+          totalMilisegundos += tiempoValue;
+          count++;
+
+          // Debug: mostrar cada valor
+          print('Documento ID: ${doc.id}, resultTiempo: $tiempoValue');
+        }
+      }
+      double promedio = count > 0 ? totalMilisegundos / count : 0.0;
+      return [promedio, count.toDouble()];
+
+    } catch (e) {
+      throw Exception('Error al calcular el promedio de tiempo en postevaluation por fecha: $e');
+    }
+  }
+
+
 }

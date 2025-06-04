@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../domain/repositories/evaluations_repository.dart';
 import '../../../global/controller/session_controller.dart';
+import '../../../global/dialogs/show_modal_report.dart';
 
 class HistoryEvaluationsView extends StatefulWidget {
   const HistoryEvaluationsView({super.key});
@@ -46,6 +47,20 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
   Widget build(BuildContext context) {
     final SessionController sessionController = context.read();
     final user = sessionController.state!;
+    Future<List<double>> calcularPromedioTiempoPorQuestionOne() {
+      if (selectedDate == null) {
+        // Si no se selecciona fecha y el filtro es 'TODOS', calcular el promedio de todas las postevaluaciones
+        return context.read<EvaluationsRepository>()
+            .calcularPromedioTiempoPostEvaluationAll();
+      }  else if (selectedDate != null) {
+        // Si se selecciona una fecha pero no se filtra por atención, calcular el promedio de esa fecha
+        return context.read<EvaluationsRepository>()
+            .calcularPromedioTiempoPostEvaluationByDate(selectedDate!);
+      }  else {
+        // Si no se cumple ninguna de las condiciones anteriores, retornar 0.0
+        return Future.value([0.0,0.0]);
+      }
+    }
     return FutureBuilder(
       future: FirebaseFirestore.instance.collection('user').doc(user.uid).get(),
       builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot)  {
@@ -221,7 +236,7 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
                         ),
                         Container(
                           width: double.infinity,
-                          height: 550,
+                          height: 300,
                           padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                           color: Color(0xFFD9D9D9),
                           child: SingleChildScrollView(
@@ -330,7 +345,103 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
                             ),
                           ),
                         ),
+                        //Text("Average Atention Time:  min con  s."),
+                        SizedBox(height: 20),
+                        Container(
+                          //alignment: Alignment.topLeft,
+                          width: double.infinity,
+                          height: 150,
+                          padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                          color: Color(0xFFD9D9D9),
+                          child: FutureBuilder<List<double>>(
+                            // Llama a la función para obtener el promedio de tiempo
+                            future: calcularPromedioTiempoPorQuestionOne(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                // Mostrar un indicador de carga mientras se obtienen los datos
+                                return Center(child: CircularProgressIndicator());
+                              } else if (snapshot.hasError) {
+                                print(snapshot.hasError);
+                                // Manejo de errores
+                                return Center(child: Text("Error al cargar el tiempo promedio"));
+                              } else if (!snapshot.hasData) {
+                                // Si no hay datos o el promedio es 0
+                                return Center(child: Text("No hay datos para mostrar"));
+                              } else {
+                                // Mostrar el tiempo promedio calculado
+                                double promedioMilisegundos = snapshot.data![0];
+                                double cantidadRegistros = snapshot.data![1];
+                                print(promedioMilisegundos);
 
+                                String tiempoPromedioRedondeado = promedioMilisegundos.toStringAsFixed(0);
+                                /*int minutos = promedioMinutos.floor();
+                                int segundos = ((promedioMinutos - minutos) * 60).round();
+                                double tiempo = minutos + segundos / 60;*/
+                                // double tiempo = promedioMinutos.floor() +
+                                //     double.parse(((promedioMinutos - promedioMinutos.floor()) * 60 / 60).toStringAsFixed(2));
+
+                                return SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      //Divider(),
+                                      /*Row(
+                                        children: [
+                                          IconButton(onPressed: (){
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return Center(
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(16.0),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho
+                                                    child: ShowModalReport(
+                                                      tableData: [
+                                                        {'fecha': '2024-11-18', 'hora': '10:30', 'resultado': 'Positivo', 'seAtendio': 'Sí'},
+                                                        {'fecha': '2024-11-18', 'hora': '11:00', 'resultado': 'Negativo', 'seAtendio': 'No'},
+                                                        {'fecha': '2024-11-18', 'hora': '11:30', 'resultado': 'Positivo', 'seAtendio': 'Sí'},
+                                                        {'fecha': '2024-11-19', 'hora': '09:00', 'resultado': 'Negativo', 'seAtendio': 'No'},
+                                                        {'fecha': '2024-11-19', 'hora': '09:30', 'resultado': 'Negativo', 'seAtendio': 'Sí'},
+                                                      ],
+                                                      dateFromFilter: formattedDate,
+                                                      timeProm: promedioMinutos
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                            // showModalBottomSheet(
+                                            //   context: context,
+                                            //   isScrollControlled: true, // Permitir scroll si el contenido es largo
+                                            //   builder: (context) {
+                                            //     return ShowModalReport(
+                                            //       reportTitle: "Reporte de Actividad",
+                                            //       reportDetails: "Aquí van los detalles del reporte.",
+                                            //     );
+                                            //   },
+                                            // );
+                                          }, icon: Icon(Icons.add_chart)),
+                                          //Text("Tiempo Promedio de Detección: $promedioMinutos en ml"),
+                                          //Text("Número de Casos Nuevos: $cantidadRegistros"),
+                                          // Text("Exportar Excel")
+                                        ],
+                                      )*/
+                                      _buildCardItem("Tiempo Promedio de Detección", "$tiempoPromedioRedondeado milisegundos"),
+                                      SizedBox(height: 5),
+                                      _buildCardItem("Número de Casos Nuevos", "$cantidadRegistros"),
+                                      SizedBox(height: 5),
+                                      _buildCardItem("Tasa de Aciertos", "80 %"),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -342,6 +453,57 @@ class _HistoryEvaluationsViewState extends State<HistoryEvaluationsView> {
       }
     );
   }
+
+  Widget _buildCardItem(String title, String value) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 20), // Espacio entre los cards
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Encabezado con fondo azul que ocupa todo el ancho
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Color(0xFF2D9CB1), // Azul de fondo
+              borderRadius: BorderRadius.circular(10),
+            ),
+            width: double.infinity, // Esto hace que el fondo ocupe todo el ancho
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white, // Texto blanco
+              ),
+            ),
+          ),
+          SizedBox(height: 6),
+          // Contenido del valor debajo del encabezado
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   TableRow _buildTableRow(/*BuildContext context,*/ String fecha, String hora, String resultado,
       String tiempoInicio, String tiempoFin,String tiempo/*, String uidUser*/) {
     return TableRow(

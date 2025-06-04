@@ -28,5 +28,7 @@ abstract class EvaluationsRepository{
   Future<QuerySnapshot> fetchEvaluationsByDate(String userId, DateTime selectedDate);
   Future<void> updateEvaluationField(String documentId);
   Future<Map<String, dynamic>> getLatestEvaluationStatus(String uidUser);
+  Future<List<double>> calcularPromedioTiempoPostEvaluationAll();
+  Future<List<double>> calcularPromedioTiempoPostEvaluationByDate(DateTime selectedDate);
 
 }
